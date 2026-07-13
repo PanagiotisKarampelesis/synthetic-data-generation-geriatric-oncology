@@ -1,46 +1,58 @@
 """
-Synthetic longitudinal data generation for downstream use in
-Markov Decision Process (MDP) models in geriatric oncology.
+Standalone command-line script for generating synthetic longitudinal
+geriatric-oncology data.
 
-The generated data are synthetic and intended for methodological
-demonstration only. They are not real clinical data.
+Example
+-------
+python generate_synthetic_data.py \
+    --n_patients 500 \
+    --n_visits 40 \
+    --seed 42 \
+    --output data/Fixed_patient_data.csv
 """
 
-import os
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
 
-VISIT_LEN_YEARS = 0.25
-N_VISITS = 40
+# ---------------------------------------------------------------------
+# Global simulation settings
+# ---------------------------------------------------------------------
 
-QOL_VISITS = {0} | set(range(4, 41, 4))
-VISIT_TO_YEARS = {
-    0: "baseline",
-    **{
-        v: f"{v // 4} year" + ("s" if v // 4 > 1 else "")
-        for v in sorted(QOL_VISITS)
-        if v != 0
-    },
-}
+VISIT_LEN_YEARS = 0.25  # One visit corresponds to one 3-month cycle.
+N_VISITS = 40            # Default: 40 quarterly visits = 10 years.
 
 AGE_PENALTY_PER_YEAR = 0.015
 NOISE_SIGMA = 0.03
 
-DOSE_PEN_FULL = (0.040, 0.060)
+# Dose burden on quality of life.
+DOSE_PEN_FULL = (0.040, 0.060)  # (fit, frail)
 DOSE_PEN_REDUCED = 0.006
 
+# Efficacy contribution when clinical_test == 1.
 EFFICACY_FULL = 0.015
 EFFICACY_REDUCED = 0.008
 
+# Toxicity-related quality-of-life effects.
 SEVERE_TOX_QOL_HIT_FIT = 0.15
 SEVERE_TOX_QOL_HIT_FRAIL = 0.22
 CARRYOVER_DAMAGE_FRACTION = 0.80
 QOL_DAMAGE_RECOVERY_PER_QUARTER = 0.20
 
+# Cumulative full-dose exposure.
 CUM_DOSE_SLOPE = 0.05
 MAX_CUM_DOSE_EFFECT = 0.25
 CUM_DOSE_RECOVERY_PER_QUARTER = 0.10
+
+
+def annual_qol_visits(n_visits: int) -> set[int]:
+    """Return baseline and annual QoL-assessment visit indices."""
+    return {0} | set(range(4, n_visits + 1, 4))
 
 
 def update_cum_dose_cat(cum_dose_cat: float, dose: int) -> float:
@@ -48,12 +60,15 @@ def update_cum_dose_cat(cum_dose_cat: float, dose: int) -> float:
     if dose == 1:
         cum_dose_cat += 1.0
     else:
-        cum_dose_cat = max(0.0, cum_dose_cat - CUM_DOSE_RECOVERY_PER_QUARTER)
+        cum_dose_cat = max(
+            0.0,
+            cum_dose_cat - CUM_DOSE_RECOVERY_PER_QUARTER,
+        )
     return float(cum_dose_cat)
 
 
-def cum_dose_effect_on_p_unfavorable(cum_dose_cat: float) -> float:
-    """Linear cumulative full-dose effect on unfavorable clinical status probability."""
+def cum_dose_effect_on_p_pos(cum_dose_cat: float) -> float:
+    """Return the capped cumulative-dose contribution to P(test=1)."""
     extra = CUM_DOSE_SLOPE * cum_dose_cat
     return float(np.clip(extra, 0.0, MAX_CUM_DOSE_EFFECT))
 
@@ -61,58 +76,60 @@ def cum_dose_effect_on_p_unfavorable(cum_dose_cat: float) -> float:
 def p_toxicity_g34(age: float, dose: int) -> float:
     """Quarterly probability of grade 3/4 toxicity."""
     base = 0.12 if age < 65 else 0.17
-    rr = 1.0 if dose == 1 else 0.55
-    return float(np.clip(base * rr, 0, 1))
+    relative_risk = 1.0 if dose == 1 else 0.55
+    return float(np.clip(base * relative_risk, 0.0, 1.0))
 
 
 def p_toxicity_death(age: float, dose: int) -> float:
     """Quarterly probability of toxicity-related death."""
     base = 0.0015 if age < 65 else 0.0145
-    rr = 1.0 if dose == 1 else 0.50
-    return float(np.clip(base * rr, 0, 1))
+    relative_risk = 1.0 if dose == 1 else 0.50
+    return float(np.clip(base * relative_risk, 0.0, 1.0))
 
 
-def base_next_clinical_unfavorable_prob(
+def base_next_test_positive_prob(
     current_test: int,
     dose: int,
     cum_dose_cat: float = 0.0,
 ) -> float:
-    """
-    Probability that the next clinical status is unfavorable.
-
-    clinical_test convention:
-        0 = favorable / controlled clinical state
-        1 = unfavorable / active or poor clinical state
-    """
+    """Calculate the probability that the next clinical test equals 1."""
     if current_test == 1:
-        p_unfavorable = 0.40
-        p_unfavorable *= 0.92 if dose == 1 else 1.03
+        probability = 0.40
+        probability *= 0.92 if dose == 1 else 1.03
     else:
-        p_unfavorable = 0.20
-        p_unfavorable *= 0.95 if dose == 1 else 1.05
+        probability = 0.20
+        probability *= 0.95 if dose == 1 else 1.05
 
-    p_unfavorable += cum_dose_effect_on_p_unfavorable(cum_dose_cat)
+    probability += cum_dose_effect_on_p_pos(cum_dose_cat)
+    return float(np.clip(probability, 0.05, 0.99))
 
-    return float(np.clip(p_unfavorable, 0.05, 0.99))
 
-
-def next_clinical_unfavorable_prob(
+def next_test_positive_prob(
     current_test: int,
     dose: int,
     cum_dose_cat: float,
 ) -> float:
-    """Wrapper for clinical status transition probability."""
-    return base_next_clinical_unfavorable_prob(current_test, dose, cum_dose_cat)
+    """Return P(next clinical_test = 1)."""
+    return base_next_test_positive_prob(
+        current_test=current_test,
+        dose=dose,
+        cum_dose_cat=cum_dose_cat,
+    )
 
 
-def simulate_qol_baseline(frailty: int, age: float, rng: np.random.Generator) -> float:
-    """Simulate baseline quality of life before treatment effects."""
-    lo, hi = (0.6, 0.90) if frailty == 0 else (0.4, 0.70)
-    base_qol = rng.uniform(lo, hi)
+def simulate_qol_baseline(
+    frailty: int,
+    age: float,
+    rng: np.random.Generator,
+) -> float:
+    """Generate baseline quality of life before treatment effects."""
+    lower, upper = (0.6, 0.90) if frailty == 0 else (0.4, 0.70)
+    base_qol = rng.uniform(lower, upper)
     age_penalty = max(0.0, (age - 75) * AGE_PENALTY_PER_YEAR)
-    noise = rng.normal(0, NOISE_SIGMA)
+    noise = rng.normal(0.0, NOISE_SIGMA)
+
     qol = base_qol - age_penalty + noise
-    return float(np.clip(qol, 0, 1))
+    return float(np.clip(qol, 0.0, 1.0))
 
 
 def simulate_qol(
@@ -123,9 +140,9 @@ def simulate_qol(
     rng: np.random.Generator,
     carryover_damage: float,
 ) -> float:
-    """Simulate quality of life during treatment."""
-    lo, hi = (0.6, 0.90) if frailty == 0 else (0.4, 0.70)
-    base_qol = rng.uniform(lo, hi)
+    """Generate quarterly quality of life after treatment initiation."""
+    lower, upper = (0.6, 0.90) if frailty == 0 else (0.4, 0.70)
+    base_qol = rng.uniform(lower, upper)
     age_penalty = max(0.0, (age - 75) * AGE_PENALTY_PER_YEAR)
 
     if dose == 1 and frailty == 0:
@@ -135,13 +152,21 @@ def simulate_qol(
     else:
         dose_penalty = DOSE_PEN_REDUCED
 
-    efficacy = 0.0
-    if clinical_test == 1:
-        efficacy = EFFICACY_FULL if dose == 1 else EFFICACY_REDUCED
+    efficacy = (
+        EFFICACY_FULL if dose == 1 else EFFICACY_REDUCED
+    ) if clinical_test == 1 else 0.0
 
-    noise = rng.normal(0, NOISE_SIGMA)
-    qol = base_qol - age_penalty - dose_penalty + efficacy + noise - carryover_damage
-    return float(np.clip(qol, 0, 1))
+    noise = rng.normal(0.0, NOISE_SIGMA)
+
+    qol = (
+        base_qol
+        - age_penalty
+        - dose_penalty
+        + efficacy
+        + noise
+        - carryover_damage
+    )
+    return float(np.clip(qol, 0.0, 1.0))
 
 
 def frailty_transition(
@@ -149,50 +174,51 @@ def frailty_transition(
     age: float,
     dose: int,
     clinical_test: int,
-    unfavorable_streak: int,
+    positive_streak: int,
     rng: np.random.Generator,
 ) -> int:
-    """
-    Simulate transition between fit and frail states.
-
-    frailty convention:
-        0 = fit
-        1 = frail
-
-    clinical_test convention:
-        0 = favorable / controlled
-        1 = unfavorable / active or poor clinical state
-    """
+    """Simulate the next frailty state."""
     if frail == 0:
-        p = 0.014 if age <= 75 else (0.022 if age <= 80 else 0.036)
+        probability = (
+            0.014 if age <= 75
+            else 0.022 if age <= 80
+            else 0.036
+        )
 
         if dose == 1:
-            p -= 0.003
+            probability -= 0.003
 
-        if unfavorable_streak >= 2:
-            p += 0.008 if dose == 0 else 0.003
+        if positive_streak >= 2:
+            probability += 0.008 if dose == 0 else 0.003
 
-        return 1 if rng.random() < np.clip(p, 0, 1) else 0
+        return int(
+            rng.random() < np.clip(probability, 0.0, 1.0)
+        )
 
-    recovery_prob = 0.010 if age <= 75 else (0.008 if age <= 80 else 0.006)
+    recovery_probability = (
+        0.010 if age <= 75
+        else 0.008 if age <= 80
+        else 0.006
+    )
 
     if dose == 1:
-        recovery_prob += 0.004
+        recovery_probability += 0.004
 
     if clinical_test == 0:
-        recovery_prob += 0.003
+        recovery_probability += 0.003
 
-    return 0 if rng.random() < np.clip(recovery_prob, 0, 1) else 1
+    recovered = (
+        rng.random()
+        < np.clip(recovery_probability, 0.0, 1.0)
+    )
+    return 0 if recovered else 1
 
 
-def assign_initial_dose(frail: int, rng: np.random.Generator) -> int:
-    """
-    Assign initial treatment dose.
-
-    full_dose convention:
-        0 = reduced or held dose
-        1 = full dose
-    """
+def assign_initial_dose(
+    frail: int,
+    rng: np.random.Generator,
+) -> int:
+    """Assign full dose to fit patients and randomize frail patients 1:1."""
     return 1 if frail == 0 else int(rng.random() < 0.5)
 
 
@@ -201,58 +227,79 @@ def simulate_data(
     n_visits: int = N_VISITS,
     seed: int = 42,
     save_csv: bool = True,
-    csv_path: str = "data/Fixed_patient_data.csv",
+    csv_path: str | Path = "data/Fixed_patient_data.csv",
 ) -> pd.DataFrame:
-    """
-    Generate a synthetic longitudinal patient dataset.
+    """Generate the synthetic longitudinal dataset."""
+    if n_patients <= 0:
+        raise ValueError("n_patients must be greater than zero.")
 
-    Returns
-    -------
-    pandas.DataFrame
-        Synthetic patient trajectories.
-    """
+    if n_visits <= 0:
+        raise ValueError("n_visits must be greater than zero.")
+
     rng = np.random.default_rng(seed)
+    qol_visits = annual_qol_visits(n_visits)
 
-    ids = np.arange(1, n_patients + 1)
-    ages = rng.integers(71, 96, size=n_patients)
-    frail0 = rng.choice([1, 0], size=n_patients, p=[0.7, 0.3])
-    dose0 = np.array([assign_initial_dose(f, rng) for f in frail0])
-    test0 = rng.integers(0, 2, size=n_patients)
+    patient_ids = np.arange(1, n_patients + 1)
+    baseline_ages = rng.integers(71, 96, size=n_patients)
+    baseline_frailty = rng.choice(
+        [1, 0],
+        size=n_patients,
+        p=[0.7, 0.3],
+    )
+    baseline_dose = np.array(
+        [
+            assign_initial_dose(frailty, rng)
+            for frailty in baseline_frailty
+        ]
+    )
+    baseline_test = rng.integers(0, 2, size=n_patients)
 
     print(
-        f"Baseline: {np.mean(frail0 == 0) * 100:.1f}% fit / "
-        f"{np.mean(frail0 == 1) * 100:.1f}% frail (n={n_patients})"
+        f"Baseline: "
+        f"{np.mean(baseline_frailty == 0) * 100:.1f}% fit / "
+        f"{np.mean(baseline_frailty == 1) * 100:.1f}% frail "
+        f"(n={n_patients})"
     )
 
-    records = []
+    records: list[dict[str, float | int]] = []
 
-    for pid, age0, frail_init, dose_init, test_init in zip(
-        ids, ages, frail0, dose0, test0
+    for (
+        patient_id,
+        baseline_age,
+        frailty_initial,
+        dose_initial,
+        test_initial,
+    ) in zip(
+        patient_ids,
+        baseline_ages,
+        baseline_frailty,
+        baseline_dose,
+        baseline_test,
     ):
-        age = float(age0)
-        frail = int(frail_init)
-        dose = int(dose_init)
-        clinical_test = int(test_init)
-        alive = True
-        cum_qaly = 0.0
-
-        unfavorable_streak = 1 if clinical_test == 1 else 0
-        favorable_streak = 1 if clinical_test == 0 else 0
-
+        age = float(baseline_age)
+        frail = int(frailty_initial)
+        dose = int(dose_initial)
+        clinical_test = int(test_initial)
+        cumulative_qaly = 0.0
         carryover_damage = 0.0
-        cum_dose_cat = 0.0
+        cumulative_dose = 0.0
+        positive_streak = 1 if clinical_test == 1 else 0
 
-        baseline_qol = simulate_qol_baseline(frail, age, rng)
+        baseline_qol = simulate_qol_baseline(
+            frailty=frail,
+            age=age,
+            rng=rng,
+        )
 
         records.append(
             {
-                "patient_id": pid,
+                "patient_id": int(patient_id),
                 "age": round(age, 2),
                 "visit": 0,
                 "frailty": frail,
                 "clinical_test": clinical_test,
                 "full_dose": dose,
-                "cum_dose_cat": float(cum_dose_cat),
+                "cum_dose_cat": cumulative_dose,
                 "QOL": baseline_qol,
                 "qaly_quarter": 0.0,
                 "cum_qaly": 0.0,
@@ -261,13 +308,10 @@ def simulate_data(
             }
         )
 
-        for visit_idx in range(n_visits):
-            visit = visit_idx + 1
-
-            if not alive:
-                break
-
-            carryover_damage *= 1.0 - QOL_DAMAGE_RECOVERY_PER_QUARTER
+        for visit in range(1, n_visits + 1):
+            carryover_damage *= (
+                1.0 - QOL_DAMAGE_RECOVERY_PER_QUARTER
+            )
 
             qol = simulate_qol(
                 frailty=frail,
@@ -278,85 +322,171 @@ def simulate_data(
                 carryover_damage=carryover_damage,
             )
 
-            died_tox = rng.random() < p_toxicity_death(age, dose)
-            severe_tox = False
+            died_from_toxicity = (
+                rng.random() < p_toxicity_death(age, dose)
+            )
+            severe_toxicity = False
 
-            if not died_tox:
-                severe_tox = rng.random() < p_toxicity_g34(age, dose)
+            if not died_from_toxicity:
+                severe_toxicity = (
+                    rng.random() < p_toxicity_g34(age, dose)
+                )
 
-                if severe_tox:
-                    hit = (
+                if severe_toxicity:
+                    toxicity_hit = (
                         SEVERE_TOX_QOL_HIT_FRAIL
                         if frail == 1
                         else SEVERE_TOX_QOL_HIT_FIT
                     )
-                    qol = max(0.0, qol - hit)
-                    carryover_damage += hit * CARRYOVER_DAMAGE_FRACTION
+                    qol = max(0.0, qol - toxicity_hit)
+                    carryover_damage += (
+                        toxicity_hit * CARRYOVER_DAMAGE_FRACTION
+                    )
 
-            qaly = qol * VISIT_LEN_YEARS
-            cum_qaly += qaly
+            quarterly_qaly = qol * VISIT_LEN_YEARS
+            cumulative_qaly += quarterly_qaly
 
             records.append(
                 {
-                    "patient_id": pid,
+                    "patient_id": int(patient_id),
                     "age": round(age, 2),
                     "visit": visit,
                     "frailty": frail,
                     "clinical_test": clinical_test,
                     "full_dose": dose,
-                    "cum_dose_cat": float(cum_dose_cat),
-                    "QOL": qol if visit in QOL_VISITS else np.nan,
-                    "qaly_quarter": qaly,
-                    "cum_qaly": cum_qaly,
-                    "severe_tox": int(severe_tox),
-                    "death_tox": int(died_tox),
+                    "cum_dose_cat": cumulative_dose,
+                    "QOL": qol if visit in qol_visits else np.nan,
+                    "qaly_quarter": quarterly_qaly,
+                    "cum_qaly": cumulative_qaly,
+                    "severe_tox": int(severe_toxicity),
+                    "death_tox": int(died_from_toxicity),
                 }
             )
 
-            if died_tox:
-                alive = False
+            if died_from_toxicity:
                 break
 
-            cum_dose_cat = update_cum_dose_cat(cum_dose_cat, dose)
-
-            p_next_unfavorable = next_clinical_unfavorable_prob(
-                current_test=clinical_test,
-                dose=dose,
-                cum_dose_cat=cum_dose_cat,
+            cumulative_dose = update_cum_dose_cat(
+                cumulative_dose,
+                dose,
             )
 
-            clinical_test = 1 if rng.random() < p_next_unfavorable else 0
+            probability_next_positive = next_test_positive_prob(
+                current_test=clinical_test,
+                dose=dose,
+                cum_dose_cat=cumulative_dose,
+            )
+
+            clinical_test = int(
+                rng.random() < probability_next_positive
+            )
 
             if clinical_test == 1:
-                unfavorable_streak += 1
-                favorable_streak = 0
+                positive_streak += 1
             else:
-                favorable_streak += 1
-                unfavorable_streak = 0
+                positive_streak = 0
 
             frail = frailty_transition(
                 frail=frail,
                 age=age,
                 dose=dose,
                 clinical_test=clinical_test,
-                unfavorable_streak=unfavorable_streak,
+                positive_streak=positive_streak,
                 rng=rng,
             )
 
+            # The dose remains fixed in this natural-history simulation.
             age += VISIT_LEN_YEARS
 
-    df = pd.DataFrame(records)
+    dataframe = pd.DataFrame(records)
 
     if save_csv:
-        output_dir = os.path.dirname(csv_path)
-        if output_dir:
-            os.makedirs(output_dir, exist_ok=True)
+        output_path = Path(csv_path)
+        output_path.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+        dataframe.to_csv(
+            output_path,
+            index=False,
+        )
+        print(
+            f"Saved '{output_path}' "
+            f"({len(dataframe)} rows)."
+        )
 
-        if os.path.exists(csv_path):
-            os.remove(csv_path)
+    return dataframe
 
-        df.to_csv(csv_path, index=False)
-        print(f"Saved '{csv_path}' ({len(df)} rows).")
 
-    return df
+def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(
+        description=(
+            "Generate synthetic longitudinal geriatric-oncology data."
+        )
+    )
 
+    parser.add_argument(
+        "--n_patients",
+        type=int,
+        default=500,
+        help="Number of synthetic patients to simulate.",
+    )
+    parser.add_argument(
+        "--n_visits",
+        type=int,
+        default=N_VISITS,
+        help="Number of quarterly follow-up visits.",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="Random seed used for reproducibility.",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("data/Fixed_patient_data.csv"),
+        help="Path of the generated CSV file.",
+    )
+
+    args, _ = parser.parse_known_args()
+    return args
+
+
+def main() -> None:
+    """Generate the dataset and print a concise summary."""
+    args = parse_args()
+
+    dataframe = simulate_data(
+        n_patients=args.n_patients,
+        n_visits=args.n_visits,
+        seed=args.seed,
+        save_csv=True,
+        csv_path=args.output,
+    )
+
+    print("\n--- Synthetic dataset summary ---")
+    print(f"Rows: {len(dataframe)}")
+    print(
+        "Patients: "
+        f"{dataframe['patient_id'].nunique()}"
+    )
+    print(
+        "Maximum visit: "
+        f"{int(dataframe['visit'].max())}"
+    )
+    print(
+        "Severe toxicity events: "
+        f"{int(dataframe['severe_tox'].sum())}"
+    )
+    print(
+        "Toxicity-related deaths: "
+        f"{int(dataframe['death_tox'].sum())}"
+    )
+    print(f"Output file: {args.output.resolve()}")
+
+
+if __name__ == "__main__":
+    main()
