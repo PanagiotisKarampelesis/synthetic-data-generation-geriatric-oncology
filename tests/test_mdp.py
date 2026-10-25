@@ -1,4 +1,4 @@
-"""Regression against verified original In [43]/In [44] numerical outputs."""
+"""Regression checks against reference MDP and trajectory outputs."""
 import contextlib
 import io
 from pathlib import Path
@@ -57,7 +57,7 @@ class MDPRegressionTests(unittest.TestCase):
             self.assertEqual(tuple(ax.get_xlim()),(0,60))
         plt.close(fig)
 
-    def test_saved_notebook_summary(self):
+    def test_reference_policy_summary(self):
         for policy,value in {'optimal':2.127,'always_reduced':1.843,'always_full':1.634}.items():
             actual=np.mean([res[policy]['mean_cumulative_qol'][-1] for res in self.results.values()])
             self.assertEqual(round(float(actual),3),value)

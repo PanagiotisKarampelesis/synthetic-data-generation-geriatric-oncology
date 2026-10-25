@@ -1,4 +1,4 @@
-"""Final baseline-cohort plot from In [57], executed by In [59]."""
+"""Baseline-group QALY curves and pooled standard-deviation bands."""
 
 import numpy as np
 

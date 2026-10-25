@@ -1,10 +1,10 @@
 # Synthetic patient data and MDP modeling for geriatric oncology
 
-Focused reproducibility workflow for the final generator and the paper figure produced by **In [43] (aggregation), In [57] / In [59] (final plot)**, associated with:
+A standalone Python project for generating synthetic longitudinal patient data, fitting a Markov decision process (MDP), and comparing dose policies in geriatric oncology. Associated publication:
 
 Karampelesis P, Denazis S, Koufopavlou O and Zacharaki EI (2026). *From mechanistic models to artificial intelligence: exploring the potential of digital twins in geriatric oncology.* Frontiers in Artificial Intelligence 9:1760912. https://doi.org/10.3389/frai.2026.1760912
 
-This package includes synthetic data generation, an eight-state MDP, policy optimization, trajectory simulation and the baseline-cohort figure. It preserves the original numerical workflow, including its modeling assumptions. **Known discrepancies with the paper and limitations are documented in [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md).** This is a proof of concept, not a clinically validated treatment system.
+This package includes synthetic data generation, an eight-state MDP, policy optimization, trajectory simulation and the baseline-cohort figure. **Known discrepancies with the paper and limitations are documented in [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md).** This is a proof of concept, not a clinically validated treatment system.
 
 ## Quick start
 
@@ -19,7 +19,7 @@ python -m pip install -r requirements-reproducible.txt
 python scripts/run_mdp.py
 ```
 
-The last command reads the bundled `Fixed_patient_data.csv` and writes results to `generated/mdp/`. No notebook session or hidden kernel variables are required. The repository cited by the article is https://github.com/PanagiotisKarampelesis/synthetic-data-generation-geriatric-oncology.
+The last command reads the bundled `Fixed_patient_data.csv` and writes results to `generated/mdp/`. Data generation is a separate command; the default analysis uses the bundled dataset. The repository cited by the article is https://github.com/PanagiotisKarampelesis/synthetic-data-generation-geriatric-oncology.
 
 ## Outputs
 
@@ -58,21 +58,32 @@ df = simulate_data(save_csv=False)
 mdp, policy, trajectories = run_analysis('Fixed_patient_data.csv', 'generated/mdp')
 ```
 
-## What is reproduced
+## Default configuration and results
 
 - Generator: 500 patients, 40 quarterly cycles, seed 42, 15,798 rows and 15,298 adjacent within-patient record pairs; 2,108 nonfatal severe-toxicity events and 212 toxicity deaths.
 - MDP: states `(frailty, clinical_test, current_dose)`; two actions; reward lookahead 3; transition smoothing alpha 0.5; annual discount 0.97; value iteration tolerance 0.001.
-- Trajectories: 500 simulations per starting state/policy, seed 123; 21 reward cycles, as in both executed In [44] and In [59] calls.
-- In original state-ID order, optimal actions: `[0, 1, 0, 1, 1, 0, 1, 0]`.
-- All-start-state mean final cumulative QALYs, rounded as in the saved notebook: optimal **2.127**, always reduced **1.843**, always full **1.634**. These summaries use all eight starting states equally; the figure's Fit group uses only fit/full-dose starting states.
+- Trajectories: 500 simulations per starting state/policy, seed 123; 21 quarterly reward cycles.
+- In state-ID order, optimal actions: `[0, 1, 0, 1, 1, 0, 1, 0]`.
+- All-start-state mean final cumulative QALYs, rounded to three decimals: optimal **2.127**, always reduced **1.843**, always full **1.634**. These summaries use all eight starting states equally; the figure's Fit group uses only fit/full-dose starting states.
 
-The figure displays optimal, reduced-dose and full-dose policies in both panels, including the previously hidden Fit reduced-dose curve. It shows all 21 points over 0–60 months, matching the supplied reference image. The MDP and trajectory calculations are unchanged. Verified numerical outputs and a newly rendered figure are in `results/reference/`. The exploratory notebook is excluded from the current version to avoid conflicting generators and repeated definitions.
+The figure compares optimal, reduced-dose and full-dose policies for Frail and Fit baseline groups. Each curve reports mean QALYs per three-month cycle; shading is ±1 pooled standard deviation. The default plot contains 21 points with cycle-start labels from 0 to 60 months.
 
-The generator's 40-cycle horizon is distinct from the trajectory plot's 21-cycle run. The notebook's “10 years / 40 visits” comment above In [44] was inconsistent with the actual call. Twenty-one quarterly rewards cover 5.25 years; plotted cycle-start indices 0–20 are labeled 0–60 months.
+The generator uses 40 cycles (10 years), while the policy simulations use 21 reward cycles (5.25 years). The final plotted point marks the start of the last reward cycle, at month 60.
+
+## How the analysis works
+
+1. Load longitudinal patient records from a CSV file.
+2. Map `(frailty, clinical_test, current_dose)` to eight states, with reduced and full dose as the two actions.
+3. Estimate quarterly rewards from measured `QOL` using lookahead and fallback rules, and estimate transition probabilities with smoothing.
+4. Apply value iteration to obtain a policy maximizing expected discounted reward.
+5. Simulate the optimal policy, always-reduced dose and always-full dose from each starting state.
+6. Aggregate trajectories into Frail and Fit baseline groups and export the figure, curve data, model arrays and policy summaries.
+
+See [docs/FIGURE_GUIDE.md](docs/FIGURE_GUIDE.md) for group definitions and interpretation of the plot.
 
 ## Clinical-profile coding
 
-This reference release retains **0 = favorable (Neg), 1 = unfavorable (Pos)**, consistent with the original generator comments. Paper §3.1.2 describes the reverse coding. A coordinated relabeling can preserve the numerical MDP, but it is not applied here. Do not mix a recoded CSV with this legacy MDP without adapting its state mapping and test-based policy.
+The implementation uses **0 = favorable (Neg), 1 = unfavorable (Pos)**. Paper §3.1.2 describes the reverse coding. A coordinated relabeling can preserve the numerical MDP, but it is not applied here. Do not mix a recoded CSV with this MDP without adapting all code that interprets the clinical indicator.
 
 ## Variables
 
@@ -82,7 +93,7 @@ This reference release retains **0 = favorable (Neg), 1 = unfavorable (Pos)**, c
 | `age` | Baseline/start-of-cycle age |
 | `visit` | 0 baseline; 1–40 quarterly cycle index |
 | `frailty` | 0 fit; 1 frail |
-| `clinical_test` | Legacy code described above |
+| `clinical_test` | Clinical status indicator; coding described above |
 | `full_dose` | 0 reduced-dose branch; 1 full-dose branch; fixed within each generated trajectory |
 | `cum_dose_cat` | Numeric cumulative exposure at cycle start, not a category |
 | `QOL` | Utility proxy, retained at baseline and every fourth cycle |
@@ -93,21 +104,20 @@ This reference release retains **0 = favorable (Neg), 1 = unfavorable (Pos)**, c
 
 The MDP estimates rewards from measured `QOL` with lookahead/fallback; it does **not** directly average `qaly_quarter`. Reduced dose is not a separately modeled stop/hold action.
 
-## Files and notebook provenance
+## Project structure
 
-| Path | Role / source |
+| Path | Purpose |
 |---|---|
-| `src/data_generation.py` | Supplied standalone generator, preserved byte-for-byte |
-| `src/mdp.py` | `SimpleQOLMDP` extracted from In [12] |
-| `src/trajectories.py` | Simulation and policy functions from In [16] |
-| `src/plotting.py` | Group definitions from In [25], aggregation from In [43], final plot from In [57] |
-| `src/pipeline.py` | Explicit orchestration equivalent to In [15]/In [59], plus exports |
-| `notebooks/reproduce_mdp.ipynb` | Four code cells: generate data, fit/simulate, display the figure (plus setup) |
-| `docs/FIGURE_PROVENANCE.md` | Generator comparison and exact original-cell dependency map |
-| `tests/` | Generator and MDP numerical regression checks |
-| `docs/verification*.json` | Results of validation performed on this package |
-
-The bracketed numbers are execution counts, not positional cell numbers. Only the last generator, In [4], matches the reference CSV. The first three produce 17,030, 16,887 and 15,266 rows respectively; In [4] produces the matching 15,798. The clean notebook has no repeated generator definitions or alternative plots. Only optimal/full/reduced policies are simulated, and only the baseline-cohort plot is produced.
+| `src/data_generation.py` | Generate longitudinal synthetic patient records |
+| `src/mdp.py` | Define states and actions, estimate rewards/transitions, solve the MDP |
+| `src/trajectories.py` | Simulate and summarize the three dose policies |
+| `src/plotting.py` | Define baseline groups, pool statistics and draw the figure |
+| `src/pipeline.py` | Run the analysis and export results |
+| `scripts/generate_synthetic_data.py` | Command-line entry point for data generation |
+| `scripts/run_mdp.py` | Command-line entry point for modeling and plotting |
+| `results/reference/` | Reference numerical results and figure |
+| `tests/` | Data, model and figure regression checks |
+| `IMPLEMENTATION_NOTES.md` | Model assumptions, limitations and publication discrepancies |
 
 ## Verify
 
@@ -115,7 +125,7 @@ The bracketed numbers are execution counts, not positional cell numbers. Only th
 python -m unittest discover -s tests -v
 ```
 
-The tests compare every generated CSV column, source hashes, and MDP R/P/value/policy arrays against verified reference outputs; figure means/SDs match their reference CSV within 1e-12. The reference outputs were independently checked against the original notebook functions before removing the exploratory notebook. `requirements-reproducible.txt` pins the versions tested during this review; it does not claim the original publication environment.
+The tests compare every generated CSV column, source hashes, and MDP R/P/value/policy arrays against verified reference outputs; figure means/SDs match their reference CSV within 1e-12. `requirements-reproducible.txt` pins the versions used to validate this project.
 
 ## Starting a thesis extension
 

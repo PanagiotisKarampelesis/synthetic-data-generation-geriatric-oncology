@@ -28,7 +28,7 @@ class ReproducibilityTests(unittest.TestCase):
         cls.reference = pd.read_csv(ROOT / 'Fixed_patient_data.csv')
         cls.actual = generate()
 
-    def test_original_bytes_preserved(self):
+    def test_reference_file_hashes(self):
         manifest = json.loads((ROOT / 'reference_manifest.json').read_text())
         for relative, expected in manifest['sha256'].items():
             with self.subTest(path=relative):

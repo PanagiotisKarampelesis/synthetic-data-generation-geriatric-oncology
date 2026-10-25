@@ -1,4 +1,4 @@
-"""Original eight-state MDP from notebook In [12]; mathematics unchanged."""
+"""Eight-state Markov decision process for dose-policy optimization."""
 import numpy as np
 import pandas as pd
 from collections import defaultdict

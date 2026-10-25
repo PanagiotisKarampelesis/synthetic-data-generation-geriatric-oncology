@@ -1,5 +1,5 @@
 {
-  "scope": "Original notebook modeling with In [43] aggregation and In [57]/In [59] final figure, legacy clinical coding",
+  "scope": "Eight-state MDP, three-policy simulation and baseline-group QALY figure",
   "clinical_test": {
     "0": "favorable (legacy Neg)",
     "1": "unfavorable (legacy Pos)"

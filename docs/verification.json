@@ -1,5 +1,5 @@
 {
-  "scope": "Final generator In [4], aggregation In [43], final plot In [57]/In [59]",
+  "scope": "Synthetic-data generation, MDP optimization, three-policy trajectories and baseline-group figure",
   "tests_run": 14,
   "failures": 0,
   "errors": 0,
@@ -8,6 +8,6 @@
   "numpy": "2.3.5",
   "pandas": "2.2.3",
   "matplotlib": "3.10.8",
-  "generator": "Only In [4] matches reference: 15798 rows; earlier generators: 17030,16887,15266.",
-  "comparison": "R/P/value/policy arrays unchanged; prior five curves unchanged; all six exported means/SDs pass regression within 1e-12. Both panels have three policies and 0\u201360 month axes."
+  "generator": "Default generator matches all columns of the 15,798-row reference dataset.",
+  "comparison": "R/P/value/policy arrays match reference outputs; all six curve means/SDs pass regression within 1e-12. Both panels show three policies and 0\u201360 month axes."
 }

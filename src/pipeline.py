@@ -1,4 +1,4 @@
-"""Reproduce the notebook In [43] aggregation with In [57]/In [59] final figure."""
+"""Fit the MDP, simulate dose policies and export analysis results."""
 from pathlib import Path
 import json
 import platform
@@ -61,7 +61,7 @@ def run_analysis(csv_path, output_dir, n_simulations=500, n_steps=21):
                         'min_start_state_mean':float(finals.min()),'max_start_state_mean':float(finals.max())})
     pd.DataFrame(summary).to_csv(output/'policy_summary.csv',index=False)
     metadata={
-        'scope':'Original notebook modeling with In [43] aggregation and In [57]/In [59] final figure, legacy clinical coding',
+        'scope':'Eight-state MDP, three-policy simulation and baseline-group QALY figure',
         'clinical_test':{'0':'favorable (legacy Neg)','1':'unfavorable (legacy Pos)'},
         'n_simulations_per_start_state_policy':n_simulations,'n_steps':n_steps,
         'trajectory_seed':123,'random_policy_seed':42,'annual_discount':.97,

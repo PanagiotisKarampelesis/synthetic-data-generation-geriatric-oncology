@@ -1,19 +1,19 @@
 # Implementation notes and publication discrepancies
 
-These notes describe the supplied implementation as executed, not a corrected model. The numerical generator is preserved. The paper reference is DOI 10.3389/frai.2026.1760912, especially sections 3.1.1–3.2 (printed pages 8–9). Supplementary Tables S1/S2 were not included in the review materials and have not been checked.
+These notes describe the implementation and its assumptions. The paper reference is DOI 10.3389/frai.2026.1760912, especially sections 3.1.1–3.2 (printed pages 8–9). Supplementary Tables S1/S2 were not included in the review materials and have not been checked.
 
 ## 1. Explicit differences from published prose
 
-| Topic | Published description | Supplied implementation |
+| Topic | Published description | Implementation |
 |---|---|---|
-| Clinical-profile coding (§3.1.2) | 0 unfavorable, 1 favorable | Supplied README labels 0 favorable, 1 unfavorable. Code contains no authoritative semantic mapping that resolves all model terms. |
+| Clinical-profile coding (§3.1.2) | 0 unfavorable, 1 favorable | Project documentation labels 0 favorable, 1 unfavorable. Code contains no authoritative semantic mapping that resolves all model terms. |
 | Dose adaptation (§3.1.1/3.1.4) | Dose may be reduced/held with probability 0.20 after an unfavorable clinical profile | Dose is assigned once and never changed. |
 | Full-dose frailty effect (§3.1.3) | Full dose increases fit-to-frail risk; reduced dose favors recovery | Full dose subtracts 0.003 from deterioration probability and adds 0.004 to recovery probability. |
 | QoL storage (§3.1.5) | Rounded to two decimals | Full floating-point precision is retained. |
 
-Do not silently reverse clinical-profile values or change transition signs to align the code with the prose. First establish the convention used by the original downstream MDP. For example, `clinical_test == 0` increases recovery probability, while `clinical_test == 1` activates the positive QoL efficacy term. Full-dose exposure increases the probability of `clinical_test == 1` through the cumulative-exposure term. These mechanisms require a consistent scientific interpretation; a label edit alone does not establish one.
+Do not silently reverse clinical-profile values or change transition signs to align the code with the prose. First establish the convention used by the downstream MDP. For example, `clinical_test == 0` increases recovery probability, while `clinical_test == 1` activates the positive QoL efficacy term. Full-dose exposure increases the probability of `clinical_test == 1` through the cumulative-exposure term. These mechanisms require a consistent scientific interpretation; a label edit alone does not establish one.
 
-Documentation of these differences does not amend the published article. Coauthors should determine whether a publication clarification is appropriate after examining the original analysis pipeline.
+Documentation of these differences does not amend the published article. Coauthors should determine whether a publication clarification is appropriate after examining the analysis pipeline.
 
 ## 2. Cycle timing and event order
 
@@ -68,26 +68,20 @@ All default patients are older than 65, so their toxicity probabilities use only
 - `QOL` missingness is scheduled, but the latent quarterly QoL can be recovered as `qaly_quarter/0.25` for every follow-up cycle. Models claiming access only to annual QoL must not use quarterly rewards as contemporaneously available QoL measurements.
 - There are no within-patient dose switches. With states including current dose, observed trajectories do not directly support both actions at each state. Smoothing does not establish the empirical effect of an unobserved switching action.
 - Age, cumulative exposure, clinical streak and carryover damage affect transitions or rewards but are absent from the paper's eight-state representation. The aggregated state process is not guaranteed to be exactly Markov.
-- Death appears as a flag on the last record, not as an explicit absorbing-state row. The supplied MDP has now been checked; see section 5 for terminal handling.
+- Death appears as a flag on the last record, not as an explicit absorbing-state row. See section 5 for MDP terminal handling.
 - The two QoL uniform intervals describe the base draw, not bounds on final QoL after age, treatment, noise and damage terms. Final values are clipped to [0,1].
 
-These are model limitations, distinct from numerical reproduction. Section 5 records the subsequent MDP inspection; this complete package also checks its numerical outputs against the original notebook functions.
+These limitations affect interpretation of the model independently of numerical reproducibility.
 
-## 5. Findings after inspecting the original MDP notebook
+## 5. MDP assumptions and figure interpretation
 
-The MDP notebook was subsequently supplied and inspected. The following findings extend the initial generator-only review. Supplementary tables remain unavailable.
-
-- The notebook uses clinical-profile labels Neg/Pos. Generator comments explicitly associate test 1 with disease activity/bad test and test 0 with good tests. The reference workflow retains this convention.
+- Clinical-profile labels are Neg/Pos, corresponding to codes 0/1. Generator comments associate 1 with disease activity/bad tests and 0 with good tests. The differing signs of individual model terms require care when interpreting this indicator.
 - Rewards use a future measured `QOL` (next row or lookahead up to three visits), multiplied by 0.25. When no action-specific reward observations exist, the reward is the current state's average measured QoL ×0.25; if a state has no QoL observations, a hard-coded default is used.
 - Observed transition vectors use alpha=0.5 Dirichlet smoothing across all eight states. Completely unobserved actions use a distinct fallback: 0.7 probability at the current state and 0.3/7 at each other state. The claimed switching-action benefits therefore depend on these assumptions.
 - The dose component of the next state is not constrained to equal the action in fallback/smoothed transitions.
 - There is no absorbing death state in the eight-state MDP or trajectory simulator. Death flags terminate data trajectories, but simulated MDP trajectories accrue rewards for their entire requested horizon.
-- The original state setup and `clinical_test_based` policy must both be adapted for a clinical-code inversion. In a separate controlled test, inverting the CSV test bit while retaining semantic state-ID order and adapting that policy produced identical R, P, values, policies and all simulated trajectory summaries. This optional transformation is not applied in this reference package.
-- In [43] pools variance across starting states with equal weights: E[within-state variance + mean squared] - pooled mean squared. With 500 simulations per state this is the SD of an equally weighted mixture, not a confidence interval or weighting by the actual baseline cohort.
-- In [44] executes 21 steps, despite a comment mentioning 40. The plotting function displays x=0..4 years from a series indexed at 0..5 years. Its values are per-cycle QALYs, not cumulative QALYs.
+- Recoding the clinical indicator requires coordinated changes to the data and every state mapping or rule that interprets it.
+- Group statistics pool variance across starting states with equal weights: E[within-state variance + mean squared] minus pooled mean squared. With 500 simulations per state, the band describes an equally weighted mixture, not a confidence interval or weighting by actual baseline cohort frequencies.
+- The default analysis executes 21 quarterly reward cycles. The plot labels their start times from 0 to 60 months and displays per-cycle QALYs for all three policies in both groups. The full reward horizon is 5.25 years.
 
-The clean pipeline preserves these numerical assumptions to reproduce the original analysis. Its figure changes only layout, visible tick labels and unit wording. Numerical reproducibility does not establish clinical validity or resolve the published method discrepancies.
-
-## Plot display update
-
-The current display includes the previously filtered Fit reduced-dose series and shows the full 0–60-month axis (21 cycle-start points). Both panels show all three policies. Historical references above to the original 0–4-year display describe the earlier plot only. No MDP, policy or trajectory equations changed.
+Numerical reproducibility does not establish clinical validity or resolve the discrepancies with the published methods described above.
