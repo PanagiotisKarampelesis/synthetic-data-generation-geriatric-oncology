@@ -20,3 +20,9 @@ No clinical-code inversion, dose-switch rule, frailty sign correction, terminal-
 - The single clean notebook now contains four code cells, including final data generation and only the In [43]/In [44] figure workflow.
 - Removed unused diagnostic/policy-iteration methods and policies not displayed in that figure. Preserved value iteration, three relevant policies, model arrays, random seeds and plotted curves.
 - Regression tests use the previously verified reference arrays and curves, so no historical notebook is required.
+
+## Show all three policies for Fit
+
+Removed the display/export filter hiding reduced dose from Fit. Both panels now display all three policies over 0–60 months, with the layout and axis labels of the supplied reference image. Existing five curves are numerically unchanged; exported curve data now include the sixth series.
+
+- The final display was located in original In [57], executed by In [59]. The current plotting function is extracted directly from that cell, retaining its return `(fig, axes)`; the pipeline is adapted accordingly.

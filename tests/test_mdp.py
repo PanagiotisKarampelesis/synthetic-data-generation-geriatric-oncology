@@ -11,7 +11,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from src.mdp import SimpleQOLMDP
 from src.trajectories import create_alternative_policies, analyze_trajectories_by_initial_state
-from src.plotting import _aggregate_group, get_baseline_groups
+from src.plotting import _aggregate_group, get_baseline_groups, visualize_trajectory_by_baseline_groups
 
 
 class MDPRegressionTests(unittest.TestCase):
@@ -42,12 +42,20 @@ class MDPRegressionTests(unittest.TestCase):
     def test_figure_curves_and_bands(self):
         for group,names in get_baseline_groups(self.actual,self.results).items():
             for policy in ['optimal','always_full','always_reduced']:
-                if group=='Fit' and policy=='always_reduced':continue
                 mean,sd=_aggregate_group(self.results,names,policy)
                 ref=self.curves[(self.curves.group==group)&(self.curves.policy==policy)].sort_values('step_index')
                 # CSV storage roundoff only; numerical source functions were independently checked.
                 np.testing.assert_allclose(mean,ref.mean_qaly_per_cycle,rtol=0,atol=1e-12)
                 np.testing.assert_allclose(sd,ref.sd_qaly_per_cycle,rtol=0,atol=1e-12)
+
+    def test_three_policies_in_each_panel(self):
+        import matplotlib.pyplot as plt
+        fig, _=visualize_trajectory_by_baseline_groups(self.actual,self.policy,self.results,savefig=None)
+        for ax in fig.axes:
+            self.assertEqual([line.get_label() for line in ax.lines],
+                             ['optimal policy','reduced dose','full dose'])
+            self.assertEqual(tuple(ax.get_xlim()),(0,60))
+        plt.close(fig)
 
     def test_saved_notebook_summary(self):
         for policy,value in {'optimal':2.127,'always_reduced':1.843,'always_full':1.634}.items():

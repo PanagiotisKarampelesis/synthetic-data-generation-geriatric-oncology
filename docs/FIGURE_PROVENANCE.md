@@ -23,10 +23,13 @@ The standalone `src/data_generation.py` reproduces In [4] and remains unchanged.
 | In [12] | State definition, reward/transition estimation, value iteration |
 | In [15] | Model settings and fitting sequence; extra solver comparison omitted |
 | In [16] | Trajectory simulation; only optimal/full/reduced policies retained |
-| In [25] | Frail/fit groups and baseline-cohort plotting function |
+| In [25] | Frail/fit starting-group definitions |
 | In [43] | Mean and pooled-SD aggregation used by the figure |
-| In [44] | 500 simulations and 21-step run |
+| In [57] | Final plot: three policies in both panels, time in months |
+| In [59] | 500 simulations and 21-step run using the final plot |
 
-Earlier QoL plots, cumulative plots, diagnostic cells, repeated definitions, policy-iteration comparison, unrelated policy comparisons and later In [57]/In [59]/In [63] plotting experiments are not required by this figure and are excluded from the clean notebook. The original exploratory notebook is no longer shipped in the current branch; it remains in earlier Git history and the supplied original files.
+Earlier QoL plots, cumulative plots, diagnostic cells, repeated definitions, policy-iteration comparison, unrelated policy comparisons and the standalone In [63] filename assignment are not required by this figure and are excluded from the clean notebook. The original exploratory notebook is no longer shipped in the current branch; it remains in earlier Git history and the supplied original files.
 
 The clean notebook contains four code cells: imports, final data generation, MDP/trajectory run, and image display. Numerical equations and the five displayed curves are preserved. Plot layout and unit labels are clarified as documented in the README.
+
+The first implementation selected In [44] from the initial user reference; the supplied screenshot clarified that the intended final display is In [57]/In [59]. The plotting function is now extracted directly from In [57], including both-panel ticks/labels and all three policies.

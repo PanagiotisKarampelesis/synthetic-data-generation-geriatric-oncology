@@ -1,6 +1,6 @@
 {
-  "scope": "Focused final-generator and In [43]/In [44] figure workflow",
-  "tests_run": 13,
+  "scope": "Final generator In [4], aggregation In [43], final plot In [57]/In [59]",
+  "tests_run": 14,
   "failures": 0,
   "errors": 0,
   "success": true,
@@ -9,5 +9,5 @@
   "pandas": "2.2.3",
   "matplotlib": "3.10.8",
   "generator": "Only In [4] matches reference: 15798 rows; earlier generators: 17030,16887,15266.",
-  "comparison": "Exact R/P/value/policy arrays; five mean/SD curves within CSV round-trip tolerance 1e-12; 500 simulations and 21 steps; three figure policies only."
+  "comparison": "R/P/value/policy arrays unchanged; prior five curves unchanged; all six exported means/SDs pass regression within 1e-12. Both panels have three policies and 0\u201360 month axes."
 }

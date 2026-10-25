@@ -1,5 +1,5 @@
 {
-  "scope": "Original notebook In [43]/In [44] numerical workflow, legacy clinical coding",
+  "scope": "Original notebook modeling with In [43] aggregation and In [57]/In [59] final figure, legacy clinical coding",
   "clinical_test": {
     "0": "favorable (legacy Neg)",
     "1": "unfavorable (legacy Pos)"
@@ -13,9 +13,9 @@
   "lookahead_steps": 3,
   "smoothing_alpha": 0.5,
   "cycle_years": 0.25,
-  "displayed_x_limits_years": [
+  "displayed_x_limits_months": [
     0,
-    4
+    60
   ],
   "number_of_reward_cycles": 21,
   "reward_horizon_years": 5.25,

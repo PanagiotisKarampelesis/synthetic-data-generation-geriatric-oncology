@@ -1,4 +1,4 @@
-"""Reproduce the notebook In [43] / In [44] numerical analysis."""
+"""Reproduce the notebook In [43] aggregation with In [57]/In [59] final figure."""
 from pathlib import Path
 import json
 import platform
@@ -26,7 +26,7 @@ def run_analysis(csv_path, output_dir, n_simulations=500, n_steps=21):
     alternatives = create_alternative_policies(mdp, optimal_policy=policy)
     results = analyze_trajectories_by_initial_state(
         mdp, policy, alternatives, n_simulations=n_simulations, n_steps=n_steps)
-    fig = visualize_trajectory_by_baseline_groups(mdp, policy, results, savefig=output/'figure_baseline_groups.png')
+    fig, _ = visualize_trajectory_by_baseline_groups(mdp, policy, results, savefig=output/'figure_baseline_groups.png')
     plt.close(fig)
 
     np.savez_compressed(output/'mdp_arrays.npz', R=mdp.R, P=mdp.P, values=values, optimal_policy=policy)
@@ -48,8 +48,6 @@ def run_analysis(csv_path, output_dir, n_simulations=500, n_steps=21):
     rows=[]
     for group,names in get_baseline_groups(mdp,results).items():
         for name in ['optimal','always_reduced','always_full']:
-            if group=='Fit' and name=='always_reduced':
-                continue
             mean,sd=_aggregate_group(results,names,name)
             for t,(mu,sigma) in enumerate(zip(mean,sd)):
                 rows.append({'group':group,'policy':name,'step_index':t,'time_years':t*.25,
@@ -63,12 +61,12 @@ def run_analysis(csv_path, output_dir, n_simulations=500, n_steps=21):
                         'min_start_state_mean':float(finals.min()),'max_start_state_mean':float(finals.max())})
     pd.DataFrame(summary).to_csv(output/'policy_summary.csv',index=False)
     metadata={
-        'scope':'Original notebook In [43]/In [44] numerical workflow, legacy clinical coding',
+        'scope':'Original notebook modeling with In [43] aggregation and In [57]/In [59] final figure, legacy clinical coding',
         'clinical_test':{'0':'favorable (legacy Neg)','1':'unfavorable (legacy Pos)'},
         'n_simulations_per_start_state_policy':n_simulations,'n_steps':n_steps,
         'trajectory_seed':123,'random_policy_seed':42,'annual_discount':.97,
         'quarterly_discount':mdp.gamma,'lookahead_steps':3,'smoothing_alpha':.5,
-        'cycle_years':.25,'displayed_x_limits_years':[0,4],
+        'cycle_years':.25,'displayed_x_limits_months':[0,(n_steps-1)*3],
         'number_of_reward_cycles':n_steps,'reward_horizon_years':n_steps*.25,
         'last_plotted_point_time_years':(n_steps-1)*.25,
         'band':'plus/minus one pooled standard deviation; not a confidence interval',

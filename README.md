@@ -1,6 +1,6 @@
 # Synthetic patient data and MDP modeling for geriatric oncology
 
-Focused reproducibility workflow for the final generator and the paper figure produced by **In [43] / In [44]**, associated with:
+Focused reproducibility workflow for the final generator and the paper figure produced by **In [43] (aggregation), In [57] / In [59] (final plot)**, associated with:
 
 Karampelesis P, Denazis S, Koufopavlou O and Zacharaki EI (2026). *From mechanistic models to artificial intelligence: exploring the potential of digital twins in geriatric oncology.* Frontiers in Artificial Intelligence 9:1760912. https://doi.org/10.3389/frai.2026.1760912
 
@@ -62,13 +62,13 @@ mdp, policy, trajectories = run_analysis('Fixed_patient_data.csv', 'generated/md
 
 - Generator: 500 patients, 40 quarterly cycles, seed 42, 15,798 rows and 15,298 adjacent within-patient record pairs; 2,108 nonfatal severe-toxicity events and 212 toxicity deaths.
 - MDP: states `(frailty, clinical_test, current_dose)`; two actions; reward lookahead 3; transition smoothing alpha 0.5; annual discount 0.97; value iteration tolerance 0.001.
-- Trajectories: 500 simulations per starting state/policy, seed 123; 21 reward cycles, exactly as the executed In [44] call.
+- Trajectories: 500 simulations per starting state/policy, seed 123; 21 reward cycles, as in both executed In [44] and In [59] calls.
 - In original state-ID order, optimal actions: `[0, 1, 0, 1, 1, 0, 1, 0]`.
 - All-start-state mean final cumulative QALYs, rounded as in the saved notebook: optimal **2.127**, always reduced **1.843**, always full **1.634**. These summaries use all eight starting states equally; the figure's Fit group uses only fit/full-dose starting states.
 
-The extracted figure keeps the original curve values and displayed 0–4-year window. Presentation-only changes remove the unused subplot row, show numeric time ticks, and label the vertical axis as QALY per 3-month cycle. Verified numerical outputs and a newly rendered figure are in `results/reference/`. The exploratory notebook is excluded from the current version to avoid conflicting generators and repeated definitions.
+The figure displays optimal, reduced-dose and full-dose policies in both panels, including the previously hidden Fit reduced-dose curve. It shows all 21 points over 0–60 months, matching the supplied reference image. The MDP and trajectory calculations are unchanged. Verified numerical outputs and a newly rendered figure are in `results/reference/`. The exploratory notebook is excluded from the current version to avoid conflicting generators and repeated definitions.
 
-The generator's 40-cycle horizon is distinct from the trajectory plot's 21-cycle run. The notebook's “10 years / 40 visits” comment above In [44] was inconsistent with the actual call. Twenty-one quarterly rewards cover 5.25 years; plotted step indices 0–20 are labeled 0–5 years using the original convention.
+The generator's 40-cycle horizon is distinct from the trajectory plot's 21-cycle run. The notebook's “10 years / 40 visits” comment above In [44] was inconsistent with the actual call. Twenty-one quarterly rewards cover 5.25 years; plotted cycle-start indices 0–20 are labeled 0–60 months.
 
 ## Clinical-profile coding
 
@@ -100,8 +100,8 @@ The MDP estimates rewards from measured `QOL` with lookahead/fallback; it does *
 | `src/data_generation.py` | Supplied standalone generator, preserved byte-for-byte |
 | `src/mdp.py` | `SimpleQOLMDP` extracted from In [12] |
 | `src/trajectories.py` | Simulation and policy functions from In [16] |
-| `src/plotting.py` | Group definitions/plot from In [25], aggregation override from In [43] |
-| `src/pipeline.py` | Explicit orchestration equivalent to In [15]/In [44], plus exports |
+| `src/plotting.py` | Group definitions from In [25], aggregation from In [43], final plot from In [57] |
+| `src/pipeline.py` | Explicit orchestration equivalent to In [15]/In [59], plus exports |
 | `notebooks/reproduce_mdp.ipynb` | Four code cells: generate data, fit/simulate, display the figure (plus setup) |
 | `docs/FIGURE_PROVENANCE.md` | Generator comparison and exact original-cell dependency map |
 | `tests/` | Generator and MDP numerical regression checks |

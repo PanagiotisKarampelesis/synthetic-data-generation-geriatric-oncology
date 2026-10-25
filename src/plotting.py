@@ -1,4 +1,4 @@
-"""Baseline-cohort plot used by In [44], with unambiguous labels and visible ticks."""
+"""Final baseline-cohort plot from In [57], executed by In [59]."""
 
 import numpy as np
 
@@ -83,107 +83,176 @@ def get_baseline_groups(mdp, trajectory_results):
     return groups
 
 def visualize_trajectory_by_baseline_groups(
-    mdp, optimal_policy, trajectory_results,
-    savefig='qol_trajectory_baseline_groups.png',
-    policy_colors=None
+    mdp,
+    optimal_policy,
+    trajectory_results,
+    savefig="Figure_5_corrected.png",
+    policy_colors=None,
+    max_months=60
 ):
-    # Χρωματισμοί για τις πολιτικές
+    """
+    Visualize QALY trajectories for frail and fit baseline groups.
+
+    Parameters
+    ----------
+    max_months : int or None
+        Maximum displayed follow-up time in months.
+        Use 60 to reproduce the five-year figure.
+        Use None to display the full simulated trajectory.
+    """
+
     if policy_colors is None:
         policy_colors = {
-            'optimal': 'red',
-            'always_reduced': 'gold',
-            'always_full': 'blue',
+            "optimal": "red",
+            "always_reduced": "gold",
+            "always_full": "blue",
         }
 
-    # Labels για να φαίνονται «ανθρώπινα» στο legend
     policy_labels = {
-        'optimal': 'optimal policy',
-        'always_full': 'full dose',
-        'always_reduced': 'reduced dose',
+        "optimal": "optimal policy",
+        "always_reduced": "reduced dose",
+        "always_full": "full dose",
     }
 
     groups = get_baseline_groups(mdp, trajectory_results)
 
-    desired_titles = ["Frail", "Fit"]
-    titles = [t for t in desired_titles if t in groups] + \
-             [t for t in groups.keys() if t not in desired_titles]
+    # Κρατάμε μόνο τα δύο panels που χρειαζόμαστε
+    titles = [title for title in ("Frail", "Fit") if title in groups]
 
-    # Επιτρεπόμενες πολιτικές ανά group
+    if not titles:
+        raise ValueError(
+            "No 'Frail' or 'Fit' baseline groups were found."
+        )
+
+    # Και οι τρεις πολιτικές εμφανίζονται και στις δύο ομάδες
     allowed_policies_by_group = {
         "Frail": {"optimal", "always_full", "always_reduced"},
-        "Fit": {"optimal", "always_full"},
+        "Fit": {"optimal", "always_full", "always_reduced"},
     }
 
-    fig, axes = plt.subplots(1, 2, figsize=(15, 5.5), sharex=True, sharey=True)
-    axes = axes.ravel()
-    fig.suptitle(
-        'QALY per cycle for frail and fit patients under different policies',
-        fontsize=24, fontweight='bold'
+    fig, axes = plt.subplots(
+        1,
+        len(titles),
+        figsize=(16, 6),
+        sharex=True,
+        sharey=True,
+        squeeze=False
     )
 
-    y_min, y_max = 0.005, 0.15
+    axes = axes.ravel()
 
-    for i, (ax, title) in enumerate(zip(axes, titles)):
+    y_min, y_max = 0.005, 0.17
+
+    for ax, title in zip(axes, titles):
         states_in_group = groups[title]
-        ax.set_title(f"{title}", fontsize=18)
+        allowed_policies = allowed_policies_by_group[title]
 
-        allowed = allowed_policies_by_group.get(title, set(policy_colors.keys()))
+        group_max_months = 0
 
-        max_years = 0.0
-
-        for pname, color in policy_colors.items():
-            if pname not in allowed:
+        for policy_name, color in policy_colors.items():
+            if policy_name not in allowed_policies:
                 continue
 
-            m, s = _aggregate_group(trajectory_results, states_in_group, pname)
-            if m is None:
+            mean_values, spread_values = _aggregate_group(
+                trajectory_results,
+                states_in_group,
+                policy_name
+            )
+
+            if mean_values is None:
                 continue
 
-            visit_idx = np.arange(len(m))   # quarters
-            x_years = visit_idx * 0.25      # convert to years
-            if len(x_years) > 0:
-                max_years = max(max_years, x_years[-1])
+            mean_values = np.asarray(mean_values)
+            spread_values = np.asarray(spread_values)
 
-            label = policy_labels.get(pname, pname.replace('_', ' '))
+            # Κάθε visit αντιστοιχεί σε τρίμηνο
+            visit_idx = np.arange(len(mean_values))
+            x_months = visit_idx * 3
+
+            if len(x_months) > 0:
+                group_max_months = max(
+                    group_max_months,
+                    float(x_months[-1])
+                )
+
+            label = policy_labels.get(
+                policy_name,
+                policy_name.replace("_", " ")
+            )
 
             ax.plot(
-                x_years, m,
+                x_months,
+                mean_values,
                 label=label,
                 linewidth=3.0,
                 color=color,
                 alpha=0.9
             )
-            ax.fill_between(x_years, m - s, m + s, alpha=0.18, color=color)
 
-        # -------- ΕΔΩ κλειδώνουμε τον άξονα σε 0–10 και βάζουμε 0,1,2,... ----------
-        if max_years == 0:
-            max_years = 5   # fallback αν για κάποιο λόγο δεν μπήκαν δεδομένα
+            ax.fill_between(
+                x_months,
+                mean_values - spread_values,
+                mean_values + spread_values,
+                color=color,
+                alpha=0.18
+            )
 
-        # αν θες ακριβώς 10 χρόνια:
-        ax.set_xlim(0, 4)
+        ax.set_title(title, fontsize=20)
 
-        ax.xaxis.set_major_locator(mticker.MultipleLocator(1.0))
-        ax.xaxis.set_minor_locator(mticker.NullLocator())
-        ax.xaxis.set_major_formatter(mticker.FormatStrFormatter('%d'))
+        # Axis labels και στα δύο panels
+        ax.set_xlabel("Time (months)", fontsize=17)
+        ax.set_ylabel("QALYs per 3-month cycle", fontsize=17)
 
-        # -------------------------------------------------------------------- #
+        # Εμφάνιση y-axis tick labels και στο δεξί panel
+        ax.tick_params(
+            axis="both",
+            which="major",
+            labelsize=13,
+            labelleft=True
+        )
 
-        ax.set_xlabel('Time (years)', fontsize=16)
-        if i % 2 == 0:
-            ax.set_ylabel('QALY per 3-month cycle', fontsize=16)
+        if max_months is not None:
+            ax.set_xlim(0, max_months)
+
+            # Για 0–60 μήνες: ticks ανά 3 μήνες, όπως στο αρχικό figure
+            if max_months <= 60:
+                ax.xaxis.set_major_locator(
+                    mticker.MultipleLocator(3)
+                )
+            else:
+                ax.xaxis.set_major_locator(
+                    mticker.MultipleLocator(12)
+                )
         else:
-            ax.set_ylabel('')
+            displayed_max = group_max_months or 60
+            ax.set_xlim(0, displayed_max)
+            ax.xaxis.set_major_locator(
+                mticker.MultipleLocator(12)
+            )
 
-        ax.tick_params(axis='both', which='major', labelsize=14, labelbottom=True)
+        ax.xaxis.set_major_formatter(
+            mticker.FormatStrFormatter("%d")
+        )
+
         ax.set_ylim(y_min, y_max)
         ax.grid(True, alpha=0.3)
-        ax.legend(fontsize=13, ncol=2)
+        ax.legend(fontsize=13, loc="best")
 
-    # Σβήσε τα άδεια panels
-    for j in range(len(titles), len(axes)):
-        axes[j].axis('off')
+    fig.suptitle(
+        "QALY trajectories for frail and fit patients under different policies",
+        fontsize=22,
+        fontweight="bold"
+    )
 
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.tight_layout(rect=[0, 0, 1, 0.94])
+
     if savefig:
-        fig.savefig(savefig, dpi=300, bbox_inches='tight')
-    return fig
+        plt.savefig(
+            savefig,
+            dpi=300,
+            bbox_inches="tight"
+        )
+
+    plt.show()
+
+    return fig, axes

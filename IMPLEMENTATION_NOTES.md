@@ -87,3 +87,7 @@ The MDP notebook was subsequently supplied and inspected. The following findings
 - In [44] executes 21 steps, despite a comment mentioning 40. The plotting function displays x=0..4 years from a series indexed at 0..5 years. Its values are per-cycle QALYs, not cumulative QALYs.
 
 The clean pipeline preserves these numerical assumptions to reproduce the original analysis. Its figure changes only layout, visible tick labels and unit wording. Numerical reproducibility does not establish clinical validity or resolve the published method discrepancies.
+
+## Plot display update
+
+The current display includes the previously filtered Fit reduced-dose series and shows the full 0–60-month axis (21 cycle-start points). Both panels show all three policies. Historical references above to the original 0–4-year display describe the earlier plot only. No MDP, policy or trajectory equations changed.
