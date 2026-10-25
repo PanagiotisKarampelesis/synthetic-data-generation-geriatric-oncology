@@ -27,3 +27,6 @@ data/*.pkl
 # IDE
 .vscode/
 .idea/
+
+# Reproducible analysis outputs
+generated/

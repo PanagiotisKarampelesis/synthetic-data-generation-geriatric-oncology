@@ -1,0 +1,17 @@
+state_id,state,action,action_name,reward_qaly_per_cycle
+0,Fit_Neg_Red,0,reduced_dose,0.11282895032799488
+0,Fit_Neg_Red,1,full_dose,0.11786569281859474
+1,Fit_Neg_Full,0,reduced_dose,0.12037315649678468
+1,Fit_Neg_Full,1,full_dose,0.11078427886973896
+2,Fit_Pos_Red,0,reduced_dose,0.11534723131168995
+2,Fit_Pos_Red,1,full_dose,0.10457065401582565
+3,Fit_Pos_Full,0,reduced_dose,0.12176031715186957
+3,Fit_Pos_Full,1,full_dose,0.11152444310714668
+4,Frail_Neg_Red,0,reduced_dose,0.06903763213680432
+4,Frail_Neg_Red,1,full_dose,0.0711937090794833
+5,Frail_Neg_Full,0,reduced_dose,0.051384373509136744
+5,Frail_Neg_Full,1,full_dose,0.04725900785213976
+6,Frail_Pos_Red,0,reduced_dose,0.06668279686049133
+6,Frail_Pos_Red,1,full_dose,0.0752579881798147
+7,Frail_Pos_Full,0,reduced_dose,0.053465924266860775
+7,Frail_Pos_Full,1,full_dose,0.04619534013885835

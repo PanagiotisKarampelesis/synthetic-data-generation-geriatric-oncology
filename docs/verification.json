@@ -1,0 +1,14 @@
+{
+  "scope": "Supplied generator plus numerical MDP workflow In [43]/In [44]",
+  "python": "3.12.14",
+  "numpy": "2.3.5",
+  "pandas": "2.2.3",
+  "matplotlib": "3.10.8",
+  "tests_run": 13,
+  "failures": 0,
+  "errors": 0,
+  "success": true,
+  "mdp_comparison": "Exact R, P, value, policy, all trajectory summaries and five plotted mean/SD curves vs original notebook functions; 500 simulations, 21 steps.",
+  "clinical_coding": "original unchanged",
+  "plot_changes": "Layout and labels only; numerical curves and x limits preserved."
+}

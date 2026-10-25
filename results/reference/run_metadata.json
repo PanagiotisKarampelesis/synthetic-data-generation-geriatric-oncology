@@ -1,0 +1,34 @@
+{
+  "scope": "Original notebook In [43]/In [44] numerical workflow, legacy clinical coding",
+  "clinical_test": {
+    "0": "favorable (legacy Neg)",
+    "1": "unfavorable (legacy Pos)"
+  },
+  "n_simulations_per_start_state_policy": 500,
+  "n_steps": 21,
+  "trajectory_seed": 123,
+  "random_policy_seed": 42,
+  "annual_discount": 0.97,
+  "quarterly_discount": 0.9924141172814958,
+  "lookahead_steps": 3,
+  "smoothing_alpha": 0.5,
+  "cycle_years": 0.25,
+  "displayed_x_limits_years": [
+    0,
+    4
+  ],
+  "number_of_reward_cycles": 21,
+  "reward_horizon_years": 5.25,
+  "last_plotted_point_time_years": 5.0,
+  "band": "plus/minus one pooled standard deviation; not a confidence interval",
+  "weighting": "equal weight per selected starting state, not empirical cohort frequencies",
+  "python": "3.12.14",
+  "numpy": "2.3.5",
+  "pandas": "2.2.3",
+  "matplotlib": "3.10.8",
+  "limitations": [
+    "Missing switching actions use assumed transitions and state-based reward fallback.",
+    "No absorbing death state in this MDP.",
+    "See IMPLEMENTATION_NOTES.md before scientific interpretation."
+  ]
+}
