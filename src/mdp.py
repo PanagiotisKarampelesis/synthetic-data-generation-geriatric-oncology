@@ -55,18 +55,6 @@ class SimpleQOLMDP:
     def get_state_index(self, frailty, clinical_test, dose):
         return self.state_mapping.get((int(frailty), int(clinical_test), int(dose)), None)
 
-    def analyze_data_coverage(self):
-        print("\n" + "="*60); print("DATA COVERAGE"); print("="*60)
-        has_qol = 'QOL' in self.df.columns
-        for i, st in self.states.items():
-            m = (
-                (self.df['frailty']==st['frailty']) &
-                (self.df['clinical_test']==st['clinical_test']) &
-                (self.df['full_dose']==st['dose'])
-            )
-            n = int(m.sum())
-            n_qol = int(self.df.loc[m,'QOL'].notna().sum()) if has_qol else 0
-            print(f"{st['name']:<15}: {n:4d} rows, {n_qol:4d} with QOL")
 
     # ---------- CHUNK 2: rewards ----------
     def estimate_qol_rewards(self, lookahead_steps=3, reward_mode="qaly", visit_len_years=0.25):
@@ -229,38 +217,4 @@ class SimpleQOLMDP:
             print(f"Reached max iterations ({max_iterations}).")
         return V, policy
 
-    def policy_evaluation(self, policy, gamma=None, epsilon=1e-3, max_iterations=5000):
-        gamma = self.gamma if gamma is None else float(gamma)
-        V = np.zeros(self.n_states, dtype=float)
-        for it in range(max_iterations):
-            delta = 0.0
-            for s in range(self.n_states):   # Gauss–Seidel-like
-                a = int(policy[s])
-                Vs_old = V[s]
-                V[s] = self.R[s,a] + gamma * np.dot(self.P[s,a,:], V)
-                delta = max(delta, abs(V[s]-Vs_old))
-            if it % 200 == 0: print(f"  PolicyEval {it:4d}: max Δ = {delta:.6f}")
-            if delta < epsilon:
-                print(f"  PolicyEval converged at {it+1} (max Δ = {delta:.6f})"); break
-        else:
-            print(f"  PolicyEval reached max iterations ({max_iterations}).")
-        return V
 
-    def policy_iteration(self, gamma=None, max_iterations=100, eval_epsilon=1e-3, eval_max_iter=5000):
-        gamma = self.gamma if gamma is None else float(gamma)
-        print("\n" + "="*60); print(f"POLICY ITERATION (γ={gamma:.5f})"); print("="*60)
-        policy = np.argmax(self.R, axis=1).astype(int)  # sensible start
-        for it in range(max_iterations):
-            V = self.policy_evaluation(policy, gamma=gamma, epsilon=eval_epsilon, max_iterations=eval_max_iter)
-            stable = True
-            for s in range(self.n_states):
-                Qa = np.array([self.R[s,a] + gamma*np.dot(self.P[s,a,:], V) for a in range(self.n_actions)])
-                best_a = int(Qa.argmax())
-                if best_a != policy[s]:
-                    policy[s] = best_a
-                    stable = False
-            if stable:
-                print(f"Policy converged after {it+1} improvement iterations."); break
-        else:
-            print(f"Reached maximum improvement iterations ({max_iterations}).")
-        return V, policy

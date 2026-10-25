@@ -1,6 +1,6 @@
 # Synthetic patient data and MDP modeling for geriatric oncology
 
-Complete reproducibility package for the supplied generator and the MDP analysis in notebook **In [43] / In [44]**, associated with:
+Focused reproducibility workflow for the final generator and the paper figure produced by **In [43] / In [44]**, associated with:
 
 Karampelesis P, Denazis S, Koufopavlou O and Zacharaki EI (2026). *From mechanistic models to artificial intelligence: exploring the potential of digital twins in geriatric oncology.* Frontiers in Artificial Intelligence 9:1760912. https://doi.org/10.3389/frai.2026.1760912
 
@@ -66,7 +66,7 @@ mdp, policy, trajectories = run_analysis('Fixed_patient_data.csv', 'generated/md
 - In original state-ID order, optimal actions: `[0, 1, 0, 1, 1, 0, 1, 0]`.
 - All-start-state mean final cumulative QALYs, rounded as in the saved notebook: optimal **2.127**, always reduced **1.843**, always full **1.634**. These summaries use all eight starting states equally; the figure's Fit group uses only fit/full-dose starting states.
 
-The extracted figure keeps the original curve values and displayed 0–4-year window. Presentation-only changes remove the unused subplot row, show numeric time ticks, and label the vertical axis as QALY per 3-month cycle. The archived notebook retains the original code and execution counts; bulky saved outputs are omitted. The original notebook with saved images is retained in the supplied complete ZIP. Verified numerical outputs and a newly rendered figure are in `results/reference/`.
+The extracted figure keeps the original curve values and displayed 0–4-year window. Presentation-only changes remove the unused subplot row, show numeric time ticks, and label the vertical axis as QALY per 3-month cycle. Verified numerical outputs and a newly rendered figure are in `results/reference/`. The exploratory notebook is excluded from the current version to avoid conflicting generators and repeated definitions.
 
 The generator's 40-cycle horizon is distinct from the trajectory plot's 21-cycle run. The notebook's “10 years / 40 visits” comment above In [44] was inconsistent with the actual call. Twenty-one quarterly rewards cover 5.25 years; plotted step indices 0–20 are labeled 0–5 years using the original convention.
 
@@ -102,12 +102,12 @@ The MDP estimates rewards from measured `QOL` with lookahead/fallback; it does *
 | `src/trajectories.py` | Simulation and policy functions from In [16] |
 | `src/plotting.py` | Group definitions/plot from In [25], aggregation override from In [43] |
 | `src/pipeline.py` | Explicit orchestration equivalent to In [15]/In [44], plus exports |
-| `notebooks/reproduce_mdp.ipynb` | Short, ordered notebook invoking the pipeline |
-| `archive/Untitled10-2.ipynb` | Original notebook code and execution counts; saved outputs omitted |
+| `notebooks/reproduce_mdp.ipynb` | Four code cells: generate data, fit/simulate, display the figure (plus setup) |
+| `docs/FIGURE_PROVENANCE.md` | Generator comparison and exact original-cell dependency map |
 | `tests/` | Generator and MDP numerical regression checks |
 | `docs/verification*.json` | Results of validation performed on this package |
 
-The bracketed numbers are execution counts, not positional cell numbers. The original notebook contains repeated function definitions; running all cells also executes later plotting overrides. Use the script or the short notebook for the In [43]/In [44] workflow.
+The bracketed numbers are execution counts, not positional cell numbers. Only the last generator, In [4], matches the reference CSV. The first three produce 17,030, 16,887 and 15,266 rows respectively; In [4] produces the matching 15,798. The clean notebook has no repeated generator definitions or alternative plots. Only optimal/full/reduced policies are simulated, and only the baseline-cohort plot is produced.
 
 ## Verify
 
@@ -115,7 +115,7 @@ The bracketed numbers are execution counts, not positional cell numbers. The ori
 python -m unittest discover -s tests -v
 ```
 
-The tests compare every generated CSV column, source hashes, MDP R/P/value/policy arrays, and figure means/SDs against the original notebook functions. `requirements-reproducible.txt` pins the versions tested during this review; it does not claim the original publication environment.
+The tests compare every generated CSV column, source hashes, and MDP R/P/value/policy arrays against verified reference outputs; figure means/SDs match their reference CSV within 1e-12. The reference outputs were independently checked against the original notebook functions before removing the exploratory notebook. `requirements-reproducible.txt` pins the versions tested during this review; it does not claim the original publication environment.
 
 ## Starting a thesis extension
 

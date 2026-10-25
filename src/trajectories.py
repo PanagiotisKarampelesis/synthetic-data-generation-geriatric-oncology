@@ -99,51 +99,14 @@ def simulate_multiple_trajectories(mdp, initial_state, policy, n_simulations=500
     return agg
 
 def create_alternative_policies(mdp, optimal_policy=None):
-    """
-    Returns a dict of policies for comparison.
-    If optimal_policy is None, compute via value iteration.
-    """
-    policies = {}
-
-    # 1) Always reduced
-    policies['always_reduced'] = np.zeros(mdp.n_states, dtype=int)
-
-    # 2) Always full
-    policies['always_full'] = np.ones(mdp.n_states, dtype=int)
-
-    # 3) Frailty-based (reduced if frail, full if fit)
-    policies['frailty_based'] = np.array([
-        0 if mdp.states[s]['frailty'] == 1 else 1
-        for s in range(mdp.n_states)
-    ], dtype=int)
-
-    # 4) Test-based (full if positive, reduced if negative)
-    policies['clinical_test_based'] = np.array([
-        1 if mdp.states[s]['clinical_test'] == 1 else 0
-        for s in range(mdp.n_states)
-    ], dtype=int)
-
-    # 5) Random (fixed seed for reproducibility)
-    rng = np.random.default_rng(42)
-    policies['random'] = rng.integers(0, 2, size=mdp.n_states, dtype=int)
-
-    # 6) Inverse-optimal (choose the worse action wrt Q)
+    """Only the three policies displayed in the paper's baseline-cohort figure."""
     if optimal_policy is None:
-        V_opt, optimal_policy = mdp.value_iteration()  # uses mdp.gamma
-    else:
-        V_opt, _ = mdp.value_iteration()  # ενημερωμένα V για Q-margins
-
-    gamma = mdp.gamma
-    inv = np.zeros(mdp.n_states, dtype=int)
-    for s in range(mdp.n_states):
-        Q = np.array([mdp.R[s, a] + gamma * np.dot(mdp.P[s, a, :], V_opt) for a in range(mdp.n_actions)])
-        inv[s] = int(np.argmin(Q))
-    policies['inverse_optimal'] = inv
-
-    # Include optimal too for convenience
-    policies['optimal'] = np.array(optimal_policy, dtype=int)
-
-    return policies
+        _, optimal_policy = mdp.value_iteration()
+    return {
+        'always_reduced': np.zeros(mdp.n_states, dtype=int),
+        'always_full': np.ones(mdp.n_states, dtype=int),
+        'optimal': np.array(optimal_policy, dtype=int),
+    }
 
 def analyze_trajectories_by_initial_state(mdp, optimal_policy, alternative_policies, n_simulations=500, n_steps=40):
     """

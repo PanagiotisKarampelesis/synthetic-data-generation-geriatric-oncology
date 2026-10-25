@@ -12,3 +12,11 @@ Prepared from the uploaded generator, CSV and original `Untitled10-2.ipynb`.
 No clinical-code inversion, dose-switch rule, frailty sign correction, terminal-state correction or reward-estimator change is applied. The existing generator, initializer and CSV were verified against GitHub main commit `602616628cd5beaa9f935e71b53633bb97ecbee2` and are unchanged. Existing ignore rules are retained.
 
 - For GitHub, removed bulky saved outputs from the archived notebook; preserved its code, cell order and execution counts. The complete original with saved outputs remains in the supplied ZIP.
+
+## Focused figure workflow
+
+- Independently compared all four notebook generators: only the final In [4] matches the reference CSV in every column.
+- Removed the exploratory notebook from the current branch; previous Git history retains it.
+- The single clean notebook now contains four code cells, including final data generation and only the In [43]/In [44] figure workflow.
+- Removed unused diagnostic/policy-iteration methods and policies not displayed in that figure. Preserved value iteration, three relevant policies, model arrays, random seeds and plotted curves.
+- Regression tests use the previously verified reference arrays and curves, so no historical notebook is required.
