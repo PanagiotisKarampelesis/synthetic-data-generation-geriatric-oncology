@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: If you find this work useful in your research, please cite our paper listed
+  in preferred-citation.
+title: Synthetic patient data and MDP modeling for geriatric oncology
+type: software
+authors:
+- &id001
+  family-names: Karampelesis
+  given-names: Panagiotis
+repository-code: https://github.com/PanagiotisKarampelesis/synthetic-data-generation-geriatric-oncology
+preferred-citation:
+  type: article
+  authors:
+  - *id001
+  - family-names: Denazis
+    given-names: Spyros
+  - family-names: Koufopavlou
+    given-names: Odysseas
+  - family-names: Zacharaki
+    given-names: Evangelia I.
+  title: 'From mechanistic models to artificial intelligence: exploring the potential
+    of digital twins in geriatric oncology'
+  journal: Frontiers in Artificial Intelligence
+  year: 2026
+  month: 7
+  day: 23
+  volume: 9
+  start: '1760912'
+  doi: 10.3389/frai.2026.1760912
+  url: https://doi.org/10.3389/frai.2026.1760912

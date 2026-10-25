@@ -6,6 +6,16 @@ Karampelesis P, Denazis S, Koufopavlou O and Zacharaki EI (2026). *From mechanis
 
 This package includes synthetic data generation, an eight-state MDP, policy optimization, trajectory simulation and the baseline-cohort figure. **Known discrepancies with the paper and limitations are documented in [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md).** This is a proof of concept, not a clinically validated treatment system.
 
+## Citation
+
+If you find this work useful in your research, please cite our paper:
+
+Karampelesis P, Denazis S, Koufopavlou O, Zacharaki EI. [From mechanistic models to artificial intelligence: exploring the potential of digital twins in geriatric oncology](https://doi.org/10.3389/frai.2026.1760912). Frontiers in Artificial Intelligence. 2026 Jul 23;9:1760912.
+
+DOI: [10.3389/frai.2026.1760912](https://doi.org/10.3389/frai.2026.1760912).
+
+Use **Cite this repository** in the GitHub sidebar to copy the paper citation in APA or BibTeX format.
+
 ## Quick start
 
 Use Python 3.10 or later (verified here with Python 3.12.14). From the repository root:
