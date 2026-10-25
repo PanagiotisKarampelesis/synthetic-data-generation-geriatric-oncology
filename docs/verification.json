@@ -1,0 +1,13 @@
+{
+  "scope": "Focused final-generator and In [43]/In [44] figure workflow",
+  "tests_run": 13,
+  "failures": 0,
+  "errors": 0,
+  "success": true,
+  "python": "3.12.14",
+  "numpy": "2.3.5",
+  "pandas": "2.2.3",
+  "matplotlib": "3.10.8",
+  "generator": "Only In [4] matches reference: 15798 rows; earlier generators: 17030,16887,15266.",
+  "comparison": "Exact R/P/value/policy arrays; five mean/SD curves within CSV round-trip tolerance 1e-12; 500 simulations and 21 steps; three figure policies only."
+}

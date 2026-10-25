@@ -1,0 +1,8 @@
+{
+  "description": "Original generator, initializer and CSV preserved; the historical exploratory notebook is not required.",
+  "sha256": {
+    "src/data_generation.py": "d7f0aa1c7b3c687c85cf45e43c8d73b797e607a6a01bfbe1d3e02273864ba65e",
+    "src/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "Fixed_patient_data.csv": "44b837c69e4e2c5c8b1557dffaba8bdd1b9709af91b07e37b5d3cde1e8e37018"
+  }
+}

@@ -1,0 +1,9 @@
+state_id,frailty,clinical_test,dose,name,value,optimal_action,optimal_action_name
+0,0,0,0,Fit_Neg_Red,13.66462600813524,0,reduced_dose
+1,0,0,1,Fit_Neg_Full,13.597560256344797,1,full_dose
+2,0,1,0,Fit_Pos_Red,13.665023724955082,0,reduced_dose
+3,0,1,1,Fit_Pos_Full,13.598523504262184,1,full_dose
+4,1,0,0,Frail_Neg_Red,13.421558855930375,1,full_dose
+5,1,0,1,Frail_Neg_Full,13.36460964639702,0,reduced_dose
+6,1,1,0,Frail_Pos_Red,13.433243118699549,1,full_dose
+7,1,1,1,Frail_Pos_Full,13.370593828442653,0,reduced_dose
