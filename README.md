@@ -1,6 +1,6 @@
 # Synthetic patient data and MDP modeling for geriatric oncology
 
-A standalone Python project for generating synthetic longitudinal patient data, fitting a Markov decision process (MDP), and comparing dose policies in geriatric oncology. Associated publication:
+A Python project for generating synthetic longitudinal patient data, fitting a Markov decision process (MDP), and comparing dose policies in geriatric oncology. Associated publication:
 
 Karampelesis P, Denazis S, Koufopavlou O and Zacharaki EI (2026). *From mechanistic models to artificial intelligence: exploring the potential of digital twins in geriatric oncology.* Frontiers in Artificial Intelligence 9:1760912. https://doi.org/10.3389/frai.2026.1760912
 
