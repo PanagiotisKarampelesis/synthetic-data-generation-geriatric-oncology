@@ -57,8 +57,8 @@ Final QoL is clipped to [0,1]; the uniform intervals above describe only its bas
 - **States and actions:** eight combinations of frailty, clinical indicator and current dose; actions are reduced or full dose. There is no separate hold/stop action.
 - **Rewards:** future measured `QOL` (next row or lookahead up to three visits) × 0.25. Missing action-specific observations use the state's average measured QoL; states without measurements use a default. Rewards do not directly average `qaly_quarter`.
 - **Transitions:** observed vectors use Dirichlet smoothing with alpha=0.5 across all eight states. Unobserved actions use 0.7 at the current state and 0.3/7 at every other state.
-- **Dose switching:** generated data contain no within-patient switches, so switching-action outcomes depend on the fallback assumptions. In smoothed/fallback transitions, the next state's dose is not constrained to match the selected action.
-- **Terminal outcomes:** death terminates generated patient records, but the eight-state MDP has no absorbing death state. Simulated policy trajectories accrue rewards throughout the requested horizon.
+- **Dose selection:** At each decision step, the MDP evaluates the patient's current state and selects either full or reduced dose.
+- **Terminal outcomes:** death terminates generated patient records.
 - **State information:** age, exposure, clinical streak and toxicity carryover affect the generator but are omitted from the eight-state representation; the aggregated process is not guaranteed to be exactly Markov.
 - **Measurement availability:** quarterly latent QoL is recoverable from `qaly_quarter/0.25`, although measured `QOL` is stored annually. Analyses assuming annual observations must distinguish those measurements from latent quarterly outcomes.
 
