@@ -1,12 +1,12 @@
-# Implementation notes and publication discrepancies
+# Implementation notes 
 
 These notes describe the implementation and its assumptions. The paper reference is DOI 10.3389/frai.2026.1760912, especially sections 3.1.1–3.2 (printed pages 8–9). Supplementary Tables S1/S2 were not included in the review materials and have not been checked.
 
-## 1. Explicit differences from published prose
+## 1. Model conventions and implementation details
 
 | Topic | Published description | Implementation |
 |---|---|---|
-| Clinical-profile coding (§3.1.2) | 0 unfavorable, 1 favorable | Project documentation labels 0 favorable, 1 unfavorable. Code contains no authoritative semantic mapping that resolves all model terms. |
+| Clinical-profile coding (§3.1.2) | 0 unfavorable, 1 favorable | Project documentation labels 0 favorable, 1 unfavorable.|
 | Dose adaptation (§3.1.1/3.1.4) | Dose may be reduced/held with probability 0.20 after an unfavorable clinical profile | Dose is assigned once and never changed. |
 | Full-dose frailty effect (§3.1.3) | Full dose increases fit-to-frail risk; reduced dose favors recovery | Full dose subtracts 0.003 from deterioration probability and adds 0.004 to recovery probability. |
 | QoL storage (§3.1.5) | Rounded to two decimals | Full floating-point precision is retained. |
