@@ -91,9 +91,6 @@ The generator uses 40 cycles (10 years), while the policy simulations use 21 rew
 
 See [docs/FIGURE_GUIDE.md](docs/FIGURE_GUIDE.md) for group definitions and interpretation of the plot.
 
-## Clinical-profile coding
-
-The implementation uses **0 = favorable (Neg), 1 = unfavorable (Pos)**. Paper §3.1.2 describes the reverse coding. A coordinated relabeling can preserve the numerical MDP, but it is not applied here. Do not mix a recoded CSV with this MDP without adapting all code that interprets the clinical indicator.
 
 ## Variables
 
@@ -103,8 +100,8 @@ The implementation uses **0 = favorable (Neg), 1 = unfavorable (Pos)**. Paper §
 | `age` | Baseline/start-of-cycle age |
 | `visit` | 0 baseline; 1–40 quarterly cycle index |
 | `frailty` | 0 fit; 1 frail |
-| `clinical_test` | Clinical status indicator; coding described above |
-| `full_dose` | 0 reduced-dose branch; 1 full-dose branch; fixed within each generated trajectory |
+| `clinical_test` | Clinical status indicator: 0 = favorable/controlled (Neg); 1 = unfavorable/active (Pos). |
+| `full_dose` | 0 reduced-dose ; 1 full-dose |
 | `cum_dose_cat` | Numeric cumulative exposure at cycle start, not a category |
 | `QOL` | Utility proxy, retained at baseline and every fourth cycle |
 | `qaly_quarter` | Simulated cycle QoL × 0.25, zero at baseline |
