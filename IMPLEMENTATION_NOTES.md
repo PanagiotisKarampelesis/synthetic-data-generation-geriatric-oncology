@@ -1,17 +1,15 @@
 # Implementation notes
 
-Technical conventions for the reference workflow accompanying DOI 10.3389/frai.2026.1760912 (§3.1.1–3.2). These notes describe software behavior, not clinical calibration. Supplementary Tables S1/S2 were not included in the documented review and remain unchecked.
+These notes summarize the conventions used in the code accompanying DOI: 10.3389/frai.2026.1760912.
 
-## Model conventions and relation to the paper
+## Model conventions
 
-| Topic | Published description | Current implementation |
-|---|---|---|
-| Clinical-profile coding (§3.1.2) | 0 unfavorable; 1 favorable | Documentation uses 0 favorable (Neg), 1 unfavorable (Pos); the interpretation of individual model terms requires reconciliation. |
-| Dose adaptation (§3.1.1/3.1.4) | Probability 0.20 of reducing/holding dose after an unfavorable profile | The generator assigns dose at baseline and keeps it fixed; this adaptation rule is not implemented. |
-| Full-dose frailty effect (§3.1.3) | Full dose increases deterioration risk; reduced dose favors recovery | The full-dose modifiers subtract 0.003 from deterioration probability and add 0.004 to recovery probability, opposite to the described direction. |
-| QoL storage (§3.1.5) | Two decimal places | Full floating-point precision is retained. |
+- **Clinical profile:** Project documentation labels 0 as favorable (Neg) and 1 as unfavorable (Pos). The paper gives the reverse coding; interpretation across model terms remains to be clarified.
+- **Dose assignment:** Each generated patient trajectory retains its baseline dose.
+- **Frailty transitions:** Full-dose modifiers lower deterioration probability and increase recovery probability.
+- **QoL storage:** Values are retained at full floating-point precision.
 
-The clinical indicator has mixed effects: code 0 adds to recovery probability, code 1 activates a positive QoL efficacy term, and cumulative full-dose exposure increases the probability of code 1. Relabeling alone does not resolve their scientific interpretation. Any recoding must update the data, state mappings and all dependent rules together.
+The dose-assignment and frailty-transition conventions above differ from the corresponding descriptions in the paper.
 
 ## Generator timing and parameters
 
