@@ -4,12 +4,11 @@ These notes summarize the conventions used in the code accompanying DOI: 10.3389
 
 ## Model conventions
 
-- **Clinical profile:** Project documentation labels 0 as favorable (Neg) and 1 as unfavorable (Pos). The paper gives the reverse coding; interpretation across model terms remains to be clarified.
+- **Clinical profile:** Project documentation labels 0 as favorable (Neg) and 1 as unfavorable (Pos). The paper gives the reverse coding; 
 - **Dose assignment:** Each generated patient trajectory retains its baseline dose.
 - **Frailty transitions:** Full-dose modifiers lower deterioration probability and increase recovery probability.
 - **QoL storage:** Values are retained at full floating-point precision.
 
-The dose-assignment and frailty-transition conventions above differ from the corresponding descriptions in the paper.
 
 ## Generator timing and parameters
 
