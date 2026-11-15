@@ -97,3 +97,7 @@ python -m unittest discover -s tests -v
 Pinned dependencies are provided in `requirements-reproducible.txt`. The checks compare generated data and model outputs against stored references; they assess numerical reproducibility, not clinical validity.
 
 No software license is currently included. Contact the authors about reuse and redistribution permissions.
+
+## Acknowledgments
+The research conducted in this work was supported by the European Union’s Horizon Research
+and Innovation Project, “IMPlementing geriatric assessment for dose Optimization of CDK 4/6-inhibitors in older bReasT cAncer patieNTs (IMPORTANT)” under Grant Agreement No. 101104589.
